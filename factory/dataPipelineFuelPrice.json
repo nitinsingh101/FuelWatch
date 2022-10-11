@@ -1,0 +1,9 @@
+{
+	"name": "dataPipelineFuelPrice",
+	"location": "australiaeast",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "73c46c46-4051-4881-b8a4-110d9cd3364e",
+		"tenantId": "d688e512-f436-492a-98da-d8c7f4567f6a"
+	}
+}
