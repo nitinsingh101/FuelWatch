@@ -1,0 +1,73 @@
+{
+	"name": "ParquetDataFile",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureBlobStorage2",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "feed.parquet",
+				"folderPath": {
+					"value": "@concat('Raw/FuelWatch/',formatDateTime(utcnow(),'yyyy-MM-dd'))",
+					"type": "Expression"
+				},
+				"container": "datalakestore"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": [
+			{
+				"name": "title",
+				"type": "UTF8"
+			},
+			{
+				"name": "description",
+				"type": "UTF8"
+			},
+			{
+				"name": "brand",
+				"type": "UTF8"
+			},
+			{
+				"name": "date",
+				"type": "UTF8"
+			},
+			{
+				"name": "price",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "trading-name",
+				"type": "UTF8"
+			},
+			{
+				"name": "location",
+				"type": "UTF8"
+			},
+			{
+				"name": "address",
+				"type": "UTF8"
+			},
+			{
+				"name": "phone",
+				"type": "UTF8"
+			},
+			{
+				"name": "latitude",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "longitude",
+				"type": "DOUBLE"
+			},
+			{
+				"name": "site-features",
+				"type": "UTF8"
+			}
+		]
+	}
+}
