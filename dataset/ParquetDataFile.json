@@ -10,11 +10,11 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobStorageLocation",
-				"fileName": "feed.parquet",
-				"folderPath": {
-					"value": "@concat('Raw/FuelWatch/',formatDateTime(utcnow(),'yyyy-MM-dd'))",
+				"fileName": {
+					"value": "@concat(formatDateTime(utcnow(),'yyyy-MM-dd'),'feed.parquet')",
 					"type": "Expression"
 				},
+				"folderPath": "Raw/FuelWatch",
 				"container": "datalakestore"
 			},
 			"compressionCodec": "snappy"

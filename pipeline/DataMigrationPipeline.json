@@ -36,7 +36,109 @@
 							"type": "ParquetWriteSettings"
 						}
 					},
-					"enableStaging": false
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"path": "['title']"
+								},
+								"sink": {
+									"name": "title"
+								}
+							},
+							{
+								"source": {
+									"path": "['description']"
+								},
+								"sink": {
+									"name": "description"
+								}
+							},
+							{
+								"source": {
+									"path": "['brand']"
+								},
+								"sink": {
+									"name": "brand"
+								}
+							},
+							{
+								"source": {
+									"path": "['date']"
+								},
+								"sink": {
+									"name": "date"
+								}
+							},
+							{
+								"source": {
+									"path": "['price']"
+								},
+								"sink": {
+									"name": "price"
+								}
+							},
+							{
+								"source": {
+									"path": "['trading-name']"
+								},
+								"sink": {
+									"name": "trading-name"
+								}
+							},
+							{
+								"source": {
+									"path": "['location']"
+								},
+								"sink": {
+									"name": "location"
+								}
+							},
+							{
+								"source": {
+									"path": "['address']"
+								},
+								"sink": {
+									"name": "address"
+								}
+							},
+							{
+								"source": {
+									"path": "['phone']"
+								},
+								"sink": {
+									"name": "phone"
+								}
+							},
+							{
+								"source": {
+									"path": "['latitude']"
+								},
+								"sink": {
+									"name": "latitude"
+								}
+							},
+							{
+								"source": {
+									"path": "['longitude']"
+								},
+								"sink": {
+									"name": "longitude"
+								}
+							},
+							{
+								"source": {
+									"path": "['site-features']"
+								},
+								"sink": {
+									"name": "site-features"
+								}
+							}
+						],
+						"collectionReference": "$['rss']['channel']['item']"
+					}
 				},
 				"inputs": [
 					{
@@ -52,7 +154,7 @@
 				]
 			},
 			{
-				"name": "Copy data1",
+				"name": "Copy data from blob to Temporary Table",
 				"type": "Copy",
 				"dependsOn": [
 					{
@@ -82,7 +184,8 @@
 					"sink": {
 						"type": "AzureSqlSink",
 						"writeBehavior": "insert",
-						"sqlWriterUseTableLock": false
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
 					},
 					"enableStaging": false,
 					"translator": {
