@@ -1,0 +1,27 @@
+{
+	"name": "AzureSqlDatabase1",
+	"properties": {
+		"annotations": [],
+		"type": "AzureSqlDatabase",
+		"typeProperties": {
+			"connectionString": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "AzureKeyVault1",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "SQLServer"
+			},
+			"servicePrincipalId": "2ebf1d2b-cf15-4265-a820-90979211e25c",
+			"servicePrincipalKey": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "AzureKeyVault1",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "ServicePrincipalKey"
+			},
+			"tenant": "d688e512-f436-492a-98da-d8c7f4567f6a"
+		}
+	}
+}
