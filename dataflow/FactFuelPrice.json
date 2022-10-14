@@ -40,22 +40,7 @@
 					"name": "FactFuelPrice"
 				}
 			],
-			"sinks": [
-				{
-					"dataset": {
-						"referenceName": "FactFuelPrice",
-						"type": "DatasetReference"
-					},
-					"name": "InsertIntoFactTable"
-				},
-				{
-					"dataset": {
-						"referenceName": "FactFuelPrice",
-						"type": "DatasetReference"
-					},
-					"name": "sink1"
-				}
-			],
+			"sinks": [],
 			"transformations": [
 				{
 					"name": "join1"
@@ -65,17 +50,6 @@
 				},
 				{
 					"name": "join3"
-				},
-				{
-					"name": "NoRecordCheck",
-					"description": "Filtering rows from Source Data which are not matching in Fact Table based on columns 'DimBrand@BrandID, FactFuelPrice@BrandID, DimSite@SiteID, FactFuelPrice@SiteID, FormatedDate, DateCreated'"
-				},
-				{
-					"name": "PreviousEntryCheck",
-					"description": "Filtering rows from Source Data which are matching in Fact Table based on columns 'DimBrand@BrandID, FactFuelPrice@BrandID, DimSite@SiteID, FactFuelPrice@SiteID, FormatedDate, DateCreated'"
-				},
-				{
-					"name": "AlterRow1"
 				}
 			],
 			"scriptLines": [
@@ -157,68 +131,7 @@
 				"     joinType:'left',",
 				"     matchType:'exact',",
 				"     ignoreSpaces: false,",
-				"     broadcast: 'auto')~> join3",
-				"join3, FactFuelPrice exists(DimBrand@BrandID == FactFuelPrice@BrandID",
-				"     && DimSite@SiteID == FactFuelPrice@SiteID",
-				"     && FormatedDate == DateCreated,",
-				"     negate:true,",
-				"     broadcast: 'auto')~> NoRecordCheck",
-				"join3, FactFuelPrice exists(DimBrand@BrandID == FactFuelPrice@BrandID",
-				"     && DimSite@SiteID == FactFuelPrice@SiteID",
-				"     && FormatedDate == DateCreated,",
-				"     negate:false,",
-				"     broadcast: 'auto')~> PreviousEntryCheck",
-				"PreviousEntryCheck alterRow(upsertIf(true())) ~> AlterRow1",
-				"NoRecordCheck sink(allowSchemaDrift: true,",
-				"     validateSchema: false,",
-				"     input(",
-				"          FuelPriceID as integer,",
-				"          BrandID as integer,",
-				"          SiteID as integer,",
-				"          Price as decimal(5,1),",
-				"          DateCreated as integer,",
-				"          DateModified as integer",
-				"     ),",
-				"     deletable:false,",
-				"     insertable:true,",
-				"     updateable:false,",
-				"     upsertable:false,",
-				"     format: 'table',",
-				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true,",
-				"     errorHandlingOption: 'stopOnFirstError',",
-				"     mapColumn(",
-				"          BrandID,",
-				"          SiteID = DimSite@SiteID,",
-				"          Price = price,",
-				"          DateCreated = FormatedDate",
-				"     )) ~> InsertIntoFactTable",
-				"AlterRow1 sink(allowSchemaDrift: true,",
-				"     validateSchema: false,",
-				"     input(",
-				"          FuelPriceID as integer,",
-				"          BrandID as integer,",
-				"          SiteID as integer,",
-				"          Price as decimal(5,1),",
-				"          DateCreated as integer,",
-				"          DateModified as integer",
-				"     ),",
-				"     deletable:false,",
-				"     insertable:false,",
-				"     updateable:false,",
-				"     upsertable:true,",
-				"     keys:['BrandID','SiteID','DateCreated'],",
-				"     format: 'table',",
-				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true,",
-				"     errorHandlingOption: 'stopOnFirstError',",
-				"     mapColumn(",
-				"          Price = price,",
-				"          BrandID,",
-				"          SiteID = DimSite@SiteID,",
-				"          DateCreated = FormatedDate,",
-				"          DateModified = FullAddress",
-				"     )) ~> sink1"
+				"     broadcast: 'auto')~> join3"
 			]
 		}
 	}
