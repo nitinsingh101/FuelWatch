@@ -1,0 +1,97 @@
+{
+	"name": "DimSiteFeatures",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "SourceTable",
+						"type": "DatasetReference"
+					},
+					"name": "SourceData"
+				},
+				{
+					"dataset": {
+						"referenceName": "DimSite",
+						"type": "DatasetReference"
+					},
+					"name": "DimSite"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DimSiteFeatures",
+						"type": "DatasetReference"
+					},
+					"name": "DimSiteFeatures"
+				}
+			],
+			"transformations": [
+				{
+					"name": "join1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          title as string,",
+				"          description as string,",
+				"          brand as string,",
+				"          date as date,",
+				"          price as decimal(5,1),",
+				"          tradingname as string,",
+				"          location as string,",
+				"          address as string,",
+				"          phone as string,",
+				"          latitude as decimal(11,7),",
+				"          longitude as decimal(11,7),",
+				"          sitefeatures as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> SourceData",
+				"source(output(",
+				"          SiteID as integer,",
+				"          TradingName as string,",
+				"          Location as string,",
+				"          Address as string,",
+				"          Phone as string,",
+				"          Latitude as decimal(11,7),",
+				"          Longitude as decimal(11,7),",
+				"          FullAddress as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> DimSite",
+				"SourceData, DimSite join(SourceData@tradingname == DimSite@TradingName",
+				"     && SourceData@location == DimSite@Location,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join1",
+				"join1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          SiteFeatureID as integer,",
+				"          SiteID as integer,",
+				"          SiteFeatures as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          SiteID,",
+				"          SiteFeatures = sitefeatures",
+				"     )) ~> DimSiteFeatures"
+			]
+		}
+	}
+}
