@@ -1,5 +1,5 @@
 {
-	"name": "dimSite",
+	"name": "DimSite",
 	"properties": {
 		"type": "MappingDataFlow",
 		"typeProperties": {

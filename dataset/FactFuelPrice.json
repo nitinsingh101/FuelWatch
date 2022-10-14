@@ -1,0 +1,71 @@
+{
+	"name": "FactFuelPrice",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "title",
+				"type": "varchar"
+			},
+			{
+				"name": "description",
+				"type": "varchar"
+			},
+			{
+				"name": "brand",
+				"type": "varchar"
+			},
+			{
+				"name": "date",
+				"type": "date"
+			},
+			{
+				"name": "price",
+				"type": "decimal",
+				"precision": 5,
+				"scale": 1
+			},
+			{
+				"name": "tradingname",
+				"type": "varchar"
+			},
+			{
+				"name": "location",
+				"type": "varchar"
+			},
+			{
+				"name": "address",
+				"type": "varchar"
+			},
+			{
+				"name": "phone",
+				"type": "varchar"
+			},
+			{
+				"name": "latitude",
+				"type": "decimal",
+				"precision": 11,
+				"scale": 7
+			},
+			{
+				"name": "longitude",
+				"type": "decimal",
+				"precision": 11,
+				"scale": 7
+			},
+			{
+				"name": "sitefeatures",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dw",
+			"table": "FuelPrice"
+		}
+	}
+}

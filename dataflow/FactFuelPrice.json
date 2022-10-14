@@ -1,0 +1,185 @@
+{
+	"name": "FactFuelPrice",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "SourceTable",
+						"type": "DatasetReference"
+					},
+					"name": "SourceData"
+				},
+				{
+					"dataset": {
+						"referenceName": "DimBrand",
+						"type": "DatasetReference"
+					},
+					"name": "DimBrand"
+				},
+				{
+					"dataset": {
+						"referenceName": "DimSite",
+						"type": "DatasetReference"
+					},
+					"name": "DimSite"
+				},
+				{
+					"dataset": {
+						"referenceName": "DimSiteFeatures",
+						"type": "DatasetReference"
+					},
+					"name": "DimSiteFeatures"
+				},
+				{
+					"dataset": {
+						"referenceName": "FactFuelPrice",
+						"type": "DatasetReference"
+					},
+					"name": "FactFuelPrice"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "FactFuelPrice",
+						"type": "DatasetReference"
+					},
+					"name": "InsertIntoFactTable"
+				}
+			],
+			"transformations": [
+				{
+					"name": "join1"
+				},
+				{
+					"name": "join2"
+				},
+				{
+					"name": "join3"
+				},
+				{
+					"name": "exists1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          title as string,",
+				"          description as string,",
+				"          brand as string,",
+				"          date as date,",
+				"          price as decimal(5,1),",
+				"          tradingname as string,",
+				"          location as string,",
+				"          address as string,",
+				"          phone as string,",
+				"          latitude as decimal(11,7),",
+				"          longitude as decimal(11,7),",
+				"          sitefeatures as string,",
+				"          FormatedDate as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     query: 'select *, cast(format(date,\\'yyyyMMdd\\') as int) FormatedDate from dw.FuelPrices',",
+				"     format: 'query') ~> SourceData",
+				"source(output(",
+				"          BrandID as integer,",
+				"          BrandName as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> DimBrand",
+				"source(output(",
+				"          SiteID as integer,",
+				"          TradingName as string,",
+				"          Location as string,",
+				"          Address as string,",
+				"          Phone as string,",
+				"          Latitude as decimal(11,7),",
+				"          Longitude as decimal(11,7),",
+				"          FullAddress as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> DimSite",
+				"source(output(",
+				"          SiteFeatureID as integer,",
+				"          SiteID as integer,",
+				"          SiteFeatures as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> DimSiteFeatures",
+				"source(output(",
+				"          FuelPriceID as integer,",
+				"          BrandID as integer,",
+				"          SiteID as integer,",
+				"          Price as decimal(5,1),",
+				"          DateCreated as integer,",
+				"          DateModified as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> FactFuelPrice",
+				"SourceData, DimBrand join(brand == BrandName,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join1",
+				"join1, DimSite join(SourceData@tradingname == DimSite@TradingName",
+				"     && SourceData@location == DimSite@Location,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join2",
+				"join2, DimSiteFeatures join(DimSite@SiteID == DimSiteFeatures@SiteID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join3",
+				"join3, FactFuelPrice exists(DimBrand@BrandID == FactFuelPrice@BrandID",
+				"     && DimSite@SiteID == FactFuelPrice@SiteID",
+				"     && FormatedDate == DateCreated,",
+				"     negate:true,",
+				"     broadcast: 'auto')~> exists1",
+				"exists1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          title as string,",
+				"          description as string,",
+				"          brand as string,",
+				"          date as date,",
+				"          price as decimal(5,1),",
+				"          tradingname as string,",
+				"          location as string,",
+				"          address as string,",
+				"          phone as string,",
+				"          latitude as decimal(11,7),",
+				"          longitude as decimal(11,7),",
+				"          sitefeatures as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          title,",
+				"          description,",
+				"          brand,",
+				"          date,",
+				"          price",
+				"     )) ~> InsertIntoFactTable"
+			]
+		}
+	}
+}
