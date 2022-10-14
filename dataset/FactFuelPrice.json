@@ -9,58 +9,35 @@
 		"type": "AzureSqlTable",
 		"schema": [
 			{
-				"name": "title",
-				"type": "varchar"
+				"name": "FuelPriceID",
+				"type": "int",
+				"precision": 10
 			},
 			{
-				"name": "description",
-				"type": "varchar"
+				"name": "BrandID",
+				"type": "int",
+				"precision": 10
 			},
 			{
-				"name": "brand",
-				"type": "varchar"
+				"name": "SiteID",
+				"type": "int",
+				"precision": 10
 			},
 			{
-				"name": "date",
-				"type": "date"
-			},
-			{
-				"name": "price",
+				"name": "Price",
 				"type": "decimal",
 				"precision": 5,
 				"scale": 1
 			},
 			{
-				"name": "tradingname",
-				"type": "varchar"
+				"name": "DateCreated",
+				"type": "int",
+				"precision": 10
 			},
 			{
-				"name": "location",
-				"type": "varchar"
-			},
-			{
-				"name": "address",
-				"type": "varchar"
-			},
-			{
-				"name": "phone",
-				"type": "varchar"
-			},
-			{
-				"name": "latitude",
-				"type": "decimal",
-				"precision": 11,
-				"scale": 7
-			},
-			{
-				"name": "longitude",
-				"type": "decimal",
-				"precision": 11,
-				"scale": 7
-			},
-			{
-				"name": "sitefeatures",
-				"type": "varchar"
+				"name": "DateModified",
+				"type": "int",
+				"precision": 10
 			}
 		],
 		"typeProperties": {
