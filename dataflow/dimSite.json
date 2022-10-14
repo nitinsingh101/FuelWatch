@@ -1,0 +1,108 @@
+{
+	"name": "dimSite",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "SourceTable",
+						"type": "DatasetReference"
+					},
+					"name": "SourceData"
+				},
+				{
+					"dataset": {
+						"referenceName": "DimSite",
+						"type": "DatasetReference"
+					},
+					"name": "DimSite"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DimSite",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "exists1",
+					"description": "Filtering rows from Source which are matching in Dimension Site Table based on columns 'SourceData@tradingname, DimSite@TradingName, SourceData@location, DimSite@Location'"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          title as string,",
+				"          description as string,",
+				"          brand as string,",
+				"          date as date,",
+				"          price as decimal(5,1),",
+				"          tradingname as string,",
+				"          location as string,",
+				"          address as string,",
+				"          phone as string,",
+				"          latitude as decimal(11,7),",
+				"          longitude as decimal(11,7),",
+				"          sitefeatures as string,",
+				"          FullAddress as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     query: 'Select *,Concat(Address,\\', \\', Location) FullAddress from dw.FuelPrices',",
+				"     format: 'query') ~> SourceData",
+				"source(output(",
+				"          SiteID as integer,",
+				"          TradingName as string,",
+				"          Location as string,",
+				"          Address as string,",
+				"          Phone as string,",
+				"          Latitude as decimal(11,7),",
+				"          Longitude as decimal(11,7),",
+				"          FullAddress as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> DimSite",
+				"SourceData, DimSite exists(SourceData@tradingname == DimSite@TradingName",
+				"     && SourceData@location == DimSite@Location,",
+				"     negate:true,",
+				"     broadcast: 'auto')~> exists1",
+				"exists1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          SiteID as integer,",
+				"          TradingName as string,",
+				"          Location as string,",
+				"          Address as string,",
+				"          Phone as string,",
+				"          Latitude as decimal(11,7),",
+				"          Longitude as decimal(11,7),",
+				"          FullAddress as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          TradingName = tradingname,",
+				"          Location = location,",
+				"          Address = address,",
+				"          Phone = phone,",
+				"          Latitude = latitude,",
+				"          Longitude = longitude,",
+				"          FullAddress",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}

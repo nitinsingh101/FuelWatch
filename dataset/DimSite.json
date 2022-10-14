@@ -1,0 +1,54 @@
+{
+	"name": "DimSite",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "SiteID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "TradingName",
+				"type": "varchar"
+			},
+			{
+				"name": "Location",
+				"type": "varchar"
+			},
+			{
+				"name": "Address",
+				"type": "varchar"
+			},
+			{
+				"name": "Phone",
+				"type": "varchar"
+			},
+			{
+				"name": "Latitude",
+				"type": "decimal",
+				"precision": 11,
+				"scale": 7
+			},
+			{
+				"name": "Longitude",
+				"type": "decimal",
+				"precision": 11,
+				"scale": 7
+			},
+			{
+				"name": "FullAddress",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "Site"
+		}
+	}
+}
