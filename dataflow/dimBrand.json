@@ -30,7 +30,8 @@
 			],
 			"transformations": [
 				{
-					"name": "exists1"
+					"name": "exists1",
+					"description": "Filtering rows from Source which are not matching in Dim Brand based on columns 'Brand, BrandName'"
 				}
 			],
 			"scriptLines": [
