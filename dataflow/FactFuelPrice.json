@@ -73,6 +73,9 @@
 				{
 					"name": "PreviousEntryCheck",
 					"description": "Filtering rows from Source Data which are matching in Fact Table based on columns 'DimBrand@BrandID, FactFuelPrice@BrandID, DimSite@SiteID, FactFuelPrice@SiteID, FormatedDate, DateCreated'"
+				},
+				{
+					"name": "AlterRow1"
 				}
 			],
 			"scriptLines": [
@@ -165,6 +168,7 @@
 				"     && FormatedDate == DateCreated,",
 				"     negate:false,",
 				"     broadcast: 'auto')~> PreviousEntryCheck",
+				"PreviousEntryCheck alterRow(upsertIf(true())) ~> AlterRow1",
 				"NoRecordCheck sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
@@ -189,7 +193,7 @@
 				"          Price = price,",
 				"          DateCreated = FormatedDate",
 				"     )) ~> InsertIntoFactTable",
-				"PreviousEntryCheck sink(allowSchemaDrift: true,",
+				"AlterRow1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
 				"          FuelPriceID as integer,",
@@ -201,8 +205,8 @@
 				"     ),",
 				"     deletable:false,",
 				"     insertable:false,",
-				"     updateable:true,",
-				"     upsertable:false,",
+				"     updateable:false,",
+				"     upsertable:true,",
 				"     keys:['BrandID','SiteID','DateCreated'],",
 				"     format: 'table',",
 				"     skipDuplicateMapInputs: true,",
