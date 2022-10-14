@@ -47,6 +47,13 @@
 						"type": "DatasetReference"
 					},
 					"name": "InsertIntoFactTable"
+				},
+				{
+					"dataset": {
+						"referenceName": "FactFuelPrice",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
 				}
 			],
 			"transformations": [
@@ -60,7 +67,12 @@
 					"name": "join3"
 				},
 				{
-					"name": "exists1"
+					"name": "NoRecordCheck",
+					"description": "Filtering rows from Source Data which are not matching in Fact Table based on columns 'DimBrand@BrandID, FactFuelPrice@BrandID, DimSite@SiteID, FactFuelPrice@SiteID, FormatedDate, DateCreated'"
+				},
+				{
+					"name": "PreviousEntryCheck",
+					"description": "Filtering rows from Source Data which are matching in Fact Table based on columns 'DimBrand@BrandID, FactFuelPrice@BrandID, DimSite@SiteID, FactFuelPrice@SiteID, FormatedDate, DateCreated'"
 				}
 			],
 			"scriptLines": [
@@ -147,8 +159,13 @@
 				"     && DimSite@SiteID == FactFuelPrice@SiteID",
 				"     && FormatedDate == DateCreated,",
 				"     negate:true,",
-				"     broadcast: 'auto')~> exists1",
-				"exists1 sink(allowSchemaDrift: true,",
+				"     broadcast: 'auto')~> NoRecordCheck",
+				"join3, FactFuelPrice exists(DimBrand@BrandID == FactFuelPrice@BrandID",
+				"     && DimSite@SiteID == FactFuelPrice@SiteID",
+				"     && FormatedDate == DateCreated,",
+				"     negate:false,",
+				"     broadcast: 'auto')~> PreviousEntryCheck",
+				"NoRecordCheck sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
 				"          FuelPriceID as integer,",
@@ -167,12 +184,37 @@
 				"     skipDuplicateMapOutputs: true,",
 				"     errorHandlingOption: 'stopOnFirstError',",
 				"     mapColumn(",
-				"          title,",
-				"          description,",
-				"          brand,",
-				"          date,",
-				"          price",
-				"     )) ~> InsertIntoFactTable"
+				"          BrandID,",
+				"          SiteID = DimSite@SiteID,",
+				"          Price = price,",
+				"          DateCreated = FormatedDate",
+				"     )) ~> InsertIntoFactTable",
+				"PreviousEntryCheck sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          FuelPriceID as integer,",
+				"          BrandID as integer,",
+				"          SiteID as integer,",
+				"          Price as decimal(5,1),",
+				"          DateCreated as integer,",
+				"          DateModified as integer",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:false,",
+				"     updateable:true,",
+				"     upsertable:false,",
+				"     keys:['BrandID','SiteID','DateCreated'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          Price = price,",
+				"          BrandID,",
+				"          SiteID = DimSite@SiteID,",
+				"          DateCreated = FormatedDate,",
+				"          DateModified = FullAddress",
+				"     )) ~> sink1"
 			]
 		}
 	}
