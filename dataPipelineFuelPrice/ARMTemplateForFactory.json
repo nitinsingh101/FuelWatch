@@ -1,0 +1,1583 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "dataPipelineFuelPrice"
+		},
+		"AzureBlobStorage_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'AzureBlobStorage'"
+		},
+		"AzureBlobStorage1_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'AzureBlobStorage1'"
+		},
+		"AzureBlobStorage2_properties_typeProperties_connectionString_secretName": {
+			"type": "string",
+			"defaultValue": "storageaccount"
+		},
+		"AzureKeyVault1_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://KeyStoreFuelPrice.vault.azure.net/"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_connectionString_secretName": {
+			"type": "string",
+			"defaultValue": "SQLServer"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_servicePrincipalId": {
+			"type": "string",
+			"defaultValue": "2ebf1d2b-cf15-4265-a820-90979211e25c"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_tenant": {
+			"type": "string",
+			"defaultValue": "d688e512-f436-492a-98da-d8c7f4567f6a"
+		},
+		"HttpServer1_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://www.fuelwatch.wa.gov.au/fuelwatch/fuelWatchRSS"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/DataMigrationPipeline')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy data from XML to blob storage",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "XmlSource",
+								"storeSettings": {
+									"type": "HttpReadSettings",
+									"requestMethod": "GET"
+								},
+								"formatSettings": {
+									"type": "XmlReadSettings",
+									"validationMode": "none",
+									"namespaces": true
+								}
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"path": "[['title']"
+										},
+										"sink": {
+											"name": "title"
+										}
+									},
+									{
+										"source": {
+											"path": "[['description']"
+										},
+										"sink": {
+											"name": "description"
+										}
+									},
+									{
+										"source": {
+											"path": "[['brand']"
+										},
+										"sink": {
+											"name": "brand"
+										}
+									},
+									{
+										"source": {
+											"path": "[['date']"
+										},
+										"sink": {
+											"name": "date"
+										}
+									},
+									{
+										"source": {
+											"path": "[['price']"
+										},
+										"sink": {
+											"name": "price"
+										}
+									},
+									{
+										"source": {
+											"path": "[['trading-name']"
+										},
+										"sink": {
+											"name": "trading-name"
+										}
+									},
+									{
+										"source": {
+											"path": "[['location']"
+										},
+										"sink": {
+											"name": "location"
+										}
+									},
+									{
+										"source": {
+											"path": "[['address']"
+										},
+										"sink": {
+											"name": "address"
+										}
+									},
+									{
+										"source": {
+											"path": "[['phone']"
+										},
+										"sink": {
+											"name": "phone"
+										}
+									},
+									{
+										"source": {
+											"path": "[['latitude']"
+										},
+										"sink": {
+											"name": "latitude"
+										}
+									},
+									{
+										"source": {
+											"path": "[['longitude']"
+										},
+										"sink": {
+											"name": "longitude"
+										}
+									},
+									{
+										"source": {
+											"path": "[['site-features']"
+										},
+										"sink": {
+											"name": "site-features"
+										}
+									}
+								],
+								"collectionReference": "$['rss']['channel']['item']"
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "XmlData",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "ParquetDataFile",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Copy data from blob to Temporary Table",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Copy data from XML to blob storage",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"writeBehavior": "upsert",
+								"upsertSettings": {
+									"useTempDB": true,
+									"keys": [
+										"tradingname",
+										"location",
+										"date"
+									]
+								},
+								"sqlWriterUseTableLock": false,
+								"disableMetricsCollection": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "title",
+											"type": "String",
+											"physicalType": "UTF8"
+										},
+										"sink": {
+											"name": "title",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "description",
+											"type": "String",
+											"physicalType": "UTF8"
+										},
+										"sink": {
+											"name": "description",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "brand",
+											"type": "String",
+											"physicalType": "UTF8"
+										},
+										"sink": {
+											"name": "brand",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "date",
+											"type": "String",
+											"physicalType": "UTF8"
+										},
+										"sink": {
+											"name": "date",
+											"type": "DateTime",
+											"physicalType": "date"
+										}
+									},
+									{
+										"source": {
+											"name": "price",
+											"type": "Double",
+											"physicalType": "DOUBLE"
+										},
+										"sink": {
+											"name": "price",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 1,
+											"precision": 5
+										}
+									},
+									{
+										"source": {
+											"name": "trading-name",
+											"type": "String",
+											"physicalType": "UTF8"
+										},
+										"sink": {
+											"name": "tradingname",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "location",
+											"type": "String",
+											"physicalType": "UTF8"
+										},
+										"sink": {
+											"name": "location",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "address",
+											"type": "String",
+											"physicalType": "UTF8"
+										},
+										"sink": {
+											"name": "address",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "phone",
+											"type": "String",
+											"physicalType": "UTF8"
+										},
+										"sink": {
+											"name": "phone",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "latitude",
+											"type": "Double",
+											"physicalType": "DOUBLE"
+										},
+										"sink": {
+											"name": "latitude",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 7,
+											"precision": 11
+										}
+									},
+									{
+										"source": {
+											"name": "longitude",
+											"type": "Double",
+											"physicalType": "DOUBLE"
+										},
+										"sink": {
+											"name": "longitude",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 7,
+											"precision": 11
+										}
+									},
+									{
+										"source": {
+											"name": "site-features",
+											"type": "String",
+											"physicalType": "UTF8"
+										},
+										"sink": {
+											"name": "sitefeatures",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									}
+								],
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "ParquetDataFile",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "AzureSqlTableConnection",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/XmlData')]",
+				"[concat(variables('factoryId'), '/datasets/ParquetDataFile')]",
+				"[concat(variables('factoryId'), '/datasets/AzureSqlTableConnection')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DataWarehousePipeline')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "DimBrand",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "DimBrand",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"source1": {},
+									"source2": {},
+									"sink1": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "DimSite",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "DimBrand",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "DimSite",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"SourceData": {},
+									"DimSite": {},
+									"sink1": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "DimSiteFeatures",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "DimSite",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "DimSiteFeatures",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"SourceData": {},
+									"DimSite": {},
+									"DimSiteFeatures": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "FactFuelPrice",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "DimSiteFeatures",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "FactFuelPrice",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"SourceData": {},
+									"DimBrand": {},
+									"DimSite": {},
+									"DimSiteFeatures": {},
+									"FactFuelPrice": {},
+									"sink1": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/DimBrand')]",
+				"[concat(variables('factoryId'), '/dataflows/DimSite')]",
+				"[concat(variables('factoryId'), '/dataflows/DimSiteFeatures')]",
+				"[concat(variables('factoryId'), '/dataflows/FactFuelPrice')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlTableConnection')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "title",
+						"type": "varchar"
+					},
+					{
+						"name": "description",
+						"type": "varchar"
+					},
+					{
+						"name": "brand",
+						"type": "varchar"
+					},
+					{
+						"name": "date",
+						"type": "date"
+					},
+					{
+						"name": "price",
+						"type": "decimal",
+						"precision": 5,
+						"scale": 1
+					},
+					{
+						"name": "tradingname",
+						"type": "varchar"
+					},
+					{
+						"name": "location",
+						"type": "varchar"
+					},
+					{
+						"name": "address",
+						"type": "varchar"
+					},
+					{
+						"name": "phone",
+						"type": "varchar"
+					},
+					{
+						"name": "latitude",
+						"type": "decimal",
+						"precision": 11,
+						"scale": 7
+					},
+					{
+						"name": "longitude",
+						"type": "decimal",
+						"precision": 11,
+						"scale": 7
+					},
+					{
+						"name": "sitefeatures",
+						"type": "varchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "dw",
+					"table": "FuelPrices"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DimBrand')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "BrandID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "BrandName",
+						"type": "varchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "dw",
+					"table": "Brand"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DimSite')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "SiteID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "TradingName",
+						"type": "varchar"
+					},
+					{
+						"name": "Location",
+						"type": "varchar"
+					},
+					{
+						"name": "Address",
+						"type": "varchar"
+					},
+					{
+						"name": "Phone",
+						"type": "varchar"
+					},
+					{
+						"name": "Latitude",
+						"type": "decimal",
+						"precision": 11,
+						"scale": 7
+					},
+					{
+						"name": "Longitude",
+						"type": "decimal",
+						"precision": 11,
+						"scale": 7
+					},
+					{
+						"name": "FullAddress",
+						"type": "varchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Site"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DimSiteFeatures')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "SiteFeatureID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "SiteID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "SiteFeatures",
+						"type": "varchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "dw",
+					"table": "SiteFeatures"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/FactFuelPrice')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "FuelPriceID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "BrandID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "SiteID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Price",
+						"type": "decimal",
+						"precision": 5,
+						"scale": 1
+					},
+					{
+						"name": "DateCreated",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "DateModified",
+						"type": "int",
+						"precision": 10
+					}
+				],
+				"typeProperties": {
+					"schema": "dw",
+					"table": "FuelPrice"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ParquetDataFile')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorage2",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": {
+							"value": "@concat(formatDateTime(utcnow(),'yyyy-MM-dd'),'feed.parquet')",
+							"type": "Expression"
+						},
+						"folderPath": "Raw/FuelWatch",
+						"container": "datalakestore"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": [
+					{
+						"name": "title",
+						"type": "UTF8"
+					},
+					{
+						"name": "description",
+						"type": "UTF8"
+					},
+					{
+						"name": "brand",
+						"type": "UTF8"
+					},
+					{
+						"name": "date",
+						"type": "UTF8"
+					},
+					{
+						"name": "price",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "trading-name",
+						"type": "UTF8"
+					},
+					{
+						"name": "location",
+						"type": "UTF8"
+					},
+					{
+						"name": "address",
+						"type": "UTF8"
+					},
+					{
+						"name": "phone",
+						"type": "UTF8"
+					},
+					{
+						"name": "latitude",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "longitude",
+						"type": "DOUBLE"
+					},
+					{
+						"name": "site-features",
+						"type": "UTF8"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/SourceTable')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dw",
+					"table": "FuelPrices"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/XmlData')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "HttpServer1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Xml",
+				"typeProperties": {
+					"location": {
+						"type": "HttpServerLocation"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/HttpServer1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureBlobStorage')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('AzureBlobStorage_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureBlobStorage1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('AzureBlobStorage1_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureBlobStorage2')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "AzureKeyVault1",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "[parameters('AzureBlobStorage2_properties_typeProperties_connectionString_secretName')]"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureKeyVault1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureKeyVault1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('AzureKeyVault1_properties_typeProperties_baseUrl')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlDatabase1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "AzureKeyVault1",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "[parameters('AzureSqlDatabase1_properties_typeProperties_connectionString_secretName')]"
+					},
+					"servicePrincipalId": "[parameters('AzureSqlDatabase1_properties_typeProperties_servicePrincipalId')]",
+					"servicePrincipalKey": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "AzureKeyVault1",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "ServicePrincipalKey"
+					},
+					"tenant": "[parameters('AzureSqlDatabase1_properties_typeProperties_tenant')]"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureKeyVault1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/HttpServer1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "HttpServer",
+				"typeProperties": {
+					"url": "[parameters('HttpServer1_properties_typeProperties_url')]",
+					"enableServerCertificateValidation": false,
+					"authenticationType": "Anonymous"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DimBrand')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "SourceTable",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						},
+						{
+							"dataset": {
+								"referenceName": "DimBrand",
+								"type": "DatasetReference"
+							},
+							"name": "source2"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "DimBrand",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "exists1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          BrandName as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     query: 'Select Distinct Brand as BrandName from dw.FuelPrices',",
+						"     format: 'query') ~> source1",
+						"source(output(",
+						"          BrandID as integer,",
+						"          BrandName as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> source2",
+						"source1, source2 exists(source1@BrandName == source2@BrandName,",
+						"     negate:true,",
+						"     broadcast: 'auto')~> exists1",
+						"exists1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          BrandID as integer,",
+						"          BrandName as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          BrandName",
+						"     )) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/SourceTable')]",
+				"[concat(variables('factoryId'), '/datasets/DimBrand')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DimSite')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "SourceTable",
+								"type": "DatasetReference"
+							},
+							"name": "SourceData"
+						},
+						{
+							"dataset": {
+								"referenceName": "DimSite",
+								"type": "DatasetReference"
+							},
+							"name": "DimSite"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "DimSite",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "exists1",
+							"description": "Filtering rows from Source which are matching in Dimension Site Table based on columns 'SourceData@tradingname, DimSite@TradingName, SourceData@location, DimSite@Location'"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          title as string,",
+						"          description as string,",
+						"          brand as string,",
+						"          date as date,",
+						"          price as decimal(5,1),",
+						"          tradingname as string,",
+						"          location as string,",
+						"          address as string,",
+						"          phone as string,",
+						"          latitude as decimal(11,7),",
+						"          longitude as decimal(11,7),",
+						"          sitefeatures as string,",
+						"          FullAddress as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     query: 'Select *,Concat(Address,\\', \\', Location) FullAddress from dw.FuelPrices',",
+						"     format: 'query') ~> SourceData",
+						"source(output(",
+						"          SiteID as integer,",
+						"          TradingName as string,",
+						"          Location as string,",
+						"          Address as string,",
+						"          Phone as string,",
+						"          Latitude as decimal(11,7),",
+						"          Longitude as decimal(11,7),",
+						"          FullAddress as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> DimSite",
+						"SourceData, DimSite exists(SourceData@tradingname == DimSite@TradingName",
+						"     && SourceData@location == DimSite@Location,",
+						"     negate:true,",
+						"     broadcast: 'auto')~> exists1",
+						"exists1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          SiteID as integer,",
+						"          TradingName as string,",
+						"          Location as string,",
+						"          Address as string,",
+						"          Phone as string,",
+						"          Latitude as decimal(11,7),",
+						"          Longitude as decimal(11,7),",
+						"          FullAddress as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          TradingName = tradingname,",
+						"          Location = location,",
+						"          Address = address,",
+						"          Phone = phone,",
+						"          Latitude = latitude,",
+						"          Longitude = longitude,",
+						"          FullAddress",
+						"     )) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/SourceTable')]",
+				"[concat(variables('factoryId'), '/datasets/DimSite')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DimSiteFeatures')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "SourceTable",
+								"type": "DatasetReference"
+							},
+							"name": "SourceData"
+						},
+						{
+							"dataset": {
+								"referenceName": "DimSite",
+								"type": "DatasetReference"
+							},
+							"name": "DimSite"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "DimSiteFeatures",
+								"type": "DatasetReference"
+							},
+							"name": "DimSiteFeatures"
+						}
+					],
+					"transformations": [
+						{
+							"name": "join1"
+						},
+						{
+							"name": "AlterRow1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          title as string,",
+						"          description as string,",
+						"          brand as string,",
+						"          date as date,",
+						"          price as decimal(5,1),",
+						"          tradingname as string,",
+						"          location as string,",
+						"          address as string,",
+						"          phone as string,",
+						"          latitude as decimal(11,7),",
+						"          longitude as decimal(11,7),",
+						"          sitefeatures as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> SourceData",
+						"source(output(",
+						"          SiteID as integer,",
+						"          TradingName as string,",
+						"          Location as string,",
+						"          Address as string,",
+						"          Phone as string,",
+						"          Latitude as decimal(11,7),",
+						"          Longitude as decimal(11,7),",
+						"          FullAddress as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> DimSite",
+						"SourceData, DimSite join(SourceData@tradingname == DimSite@TradingName",
+						"     && SourceData@location == DimSite@Location,",
+						"     joinType:'left',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> join1",
+						"join1 alterRow(upsertIf(true())) ~> AlterRow1",
+						"AlterRow1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          SiteFeatureID as integer,",
+						"          SiteID as integer,",
+						"          SiteFeatures as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:false,",
+						"     updateable:false,",
+						"     upsertable:true,",
+						"     keys:['SiteID'],",
+						"     skipKeyWrites:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          SiteID,",
+						"          SiteFeatures = sitefeatures",
+						"     )) ~> DimSiteFeatures"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/SourceTable')]",
+				"[concat(variables('factoryId'), '/datasets/DimSite')]",
+				"[concat(variables('factoryId'), '/datasets/DimSiteFeatures')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/FactFuelPrice')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "SourceTable",
+								"type": "DatasetReference"
+							},
+							"name": "SourceData"
+						},
+						{
+							"dataset": {
+								"referenceName": "DimBrand",
+								"type": "DatasetReference"
+							},
+							"name": "DimBrand"
+						},
+						{
+							"dataset": {
+								"referenceName": "DimSite",
+								"type": "DatasetReference"
+							},
+							"name": "DimSite"
+						},
+						{
+							"dataset": {
+								"referenceName": "DimSiteFeatures",
+								"type": "DatasetReference"
+							},
+							"name": "DimSiteFeatures"
+						},
+						{
+							"dataset": {
+								"referenceName": "FactFuelPrice",
+								"type": "DatasetReference"
+							},
+							"name": "FactFuelPrice"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "FactFuelPrice",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "join1",
+							"description": "Inner join on 'SourceData' and 'DimBrand'"
+						},
+						{
+							"name": "join2",
+							"description": "Inner join on 'join1' and 'DimSite'"
+						},
+						{
+							"name": "join3"
+						},
+						{
+							"name": "AlterRow1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          title as string,",
+						"          description as string,",
+						"          brand as string,",
+						"          date as date,",
+						"          price as decimal(5,1),",
+						"          tradingname as string,",
+						"          location as string,",
+						"          address as string,",
+						"          phone as string,",
+						"          latitude as decimal(11,7),",
+						"          longitude as decimal(11,7),",
+						"          sitefeatures as string,",
+						"          DateCreated as integer",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     query: 'select *, cast(format(date,\\'yyyyMMdd\\') as int) DateCreated from dw.FuelPrices',",
+						"     format: 'query') ~> SourceData",
+						"source(output(",
+						"          BrandID as integer,",
+						"          BrandName as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> DimBrand",
+						"source(output(",
+						"          SiteID as integer,",
+						"          TradingName as string,",
+						"          Location as string,",
+						"          Address as string,",
+						"          Phone as string,",
+						"          Latitude as decimal(11,7),",
+						"          Longitude as decimal(11,7),",
+						"          FullAddress as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> DimSite",
+						"source(output(",
+						"          SiteFeatureID as integer,",
+						"          SiteID as integer,",
+						"          SiteFeatures as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> DimSiteFeatures",
+						"source(output(",
+						"          FuelPriceID as integer,",
+						"          BrandID as integer,",
+						"          SiteID as integer,",
+						"          Price as decimal(5,1),",
+						"          DateCreated as integer,",
+						"          DateModified as integer",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> FactFuelPrice",
+						"SourceData, DimBrand join(brand == BrandName,",
+						"     joinType:'inner',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> join1",
+						"join1, DimSite join(SourceData@tradingname == DimSite@TradingName",
+						"     && SourceData@location == DimSite@Location,",
+						"     joinType:'inner',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> join2",
+						"join2, DimSiteFeatures join(DimSite@SiteID == DimSiteFeatures@SiteID,",
+						"     joinType:'left',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> join3",
+						"join3 alterRow(upsertIf(true())) ~> AlterRow1",
+						"AlterRow1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          FuelPriceID as integer,",
+						"          BrandID as integer,",
+						"          SiteID as integer,",
+						"          Price as decimal(5,1),",
+						"          DateCreated as integer,",
+						"          DateModified as integer",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:false,",
+						"     updateable:false,",
+						"     upsertable:true,",
+						"     keys:['BrandID','SiteID','DateCreated'],",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          BrandID,",
+						"          SiteID = DimSite@SiteID,",
+						"          Price = price,",
+						"          DateCreated,",
+						"          DateModified = DateCreated",
+						"     )) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/SourceTable')]",
+				"[concat(variables('factoryId'), '/datasets/DimBrand')]",
+				"[concat(variables('factoryId'), '/datasets/DimSite')]",
+				"[concat(variables('factoryId'), '/datasets/DimSiteFeatures')]",
+				"[concat(variables('factoryId'), '/datasets/FactFuelPrice')]"
+			]
+		}
+	]
+}

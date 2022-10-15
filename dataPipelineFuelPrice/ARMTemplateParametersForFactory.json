@@ -1,0 +1,33 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "dataPipelineFuelPrice"
+		},
+		"AzureBlobStorage_connectionString": {
+			"value": ""
+		},
+		"AzureBlobStorage1_connectionString": {
+			"value": ""
+		},
+		"AzureBlobStorage2_properties_typeProperties_connectionString_secretName": {
+			"value": "storageaccount"
+		},
+		"AzureKeyVault1_properties_typeProperties_baseUrl": {
+			"value": "https://KeyStoreFuelPrice.vault.azure.net/"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_connectionString_secretName": {
+			"value": "SQLServer"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_servicePrincipalId": {
+			"value": "2ebf1d2b-cf15-4265-a820-90979211e25c"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_tenant": {
+			"value": "d688e512-f436-492a-98da-d8c7f4567f6a"
+		},
+		"HttpServer1_properties_typeProperties_url": {
+			"value": "https://www.fuelwatch.wa.gov.au/fuelwatch/fuelWatchRSS"
+		}
+	}
+}
