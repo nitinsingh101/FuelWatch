@@ -10,13 +10,6 @@
 						"type": "DatasetReference"
 					},
 					"name": "source1"
-				},
-				{
-					"dataset": {
-						"referenceName": "DimBrand",
-						"type": "DatasetReference"
-					},
-					"name": "source2"
 				}
 			],
 			"sinks": [
@@ -30,8 +23,7 @@
 			],
 			"transformations": [
 				{
-					"name": "exists1",
-					"description": "Filtering rows from Source which are not matching in Dim Brand based on columns 'Brand, BrandName'"
+					"name": "AlterRow1"
 				}
 			],
 			"scriptLines": [
@@ -43,27 +35,19 @@
 				"     isolationLevel: 'READ_UNCOMMITTED',",
 				"     query: 'Select Distinct Brand from dw.FuelPrices',",
 				"     format: 'query') ~> source1",
-				"source(output(",
-				"          BrandID as integer,",
-				"          BrandName as string",
-				"     ),",
-				"     allowSchemaDrift: true,",
-				"     validateSchema: false,",
-				"     isolationLevel: 'READ_UNCOMMITTED',",
-				"     format: 'table') ~> source2",
-				"source1, source2 exists(Brand == BrandName,",
-				"     negate:true,",
-				"     broadcast: 'auto')~> exists1",
-				"exists1 sink(allowSchemaDrift: true,",
+				"source1 alterRow(upsertIf(true())) ~> AlterRow1",
+				"AlterRow1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
 				"          BrandID as integer,",
 				"          BrandName as string",
 				"     ),",
 				"     deletable:false,",
-				"     insertable:true,",
+				"     insertable:false,",
 				"     updateable:false,",
-				"     upsertable:false,",
+				"     upsertable:true,",
+				"     keys:['Brand'],",
+				"     skipKeyWrites:true,",
 				"     format: 'table',",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
