@@ -51,10 +51,12 @@
 			],
 			"transformations": [
 				{
-					"name": "join1"
+					"name": "join1",
+					"description": "Inner join on 'SourceData' and 'DimBrand'"
 				},
 				{
-					"name": "join2"
+					"name": "join2",
+					"description": "Inner join on 'join1' and 'DimSite'"
 				},
 				{
 					"name": "join3"
@@ -128,13 +130,13 @@
 				"     isolationLevel: 'READ_UNCOMMITTED',",
 				"     format: 'table') ~> FactFuelPrice",
 				"SourceData, DimBrand join(brand == BrandName,",
-				"     joinType:'left',",
+				"     joinType:'inner',",
 				"     matchType:'exact',",
 				"     ignoreSpaces: false,",
 				"     broadcast: 'auto')~> join1",
 				"join1, DimSite join(SourceData@tradingname == DimSite@TradingName",
 				"     && SourceData@location == DimSite@Location,",
-				"     joinType:'left',",
+				"     joinType:'inner',",
 				"     matchType:'exact',",
 				"     ignoreSpaces: false,",
 				"     broadcast: 'auto')~> join2",
@@ -159,7 +161,6 @@
 				"     updateable:false,",
 				"     upsertable:true,",
 				"     keys:['BrandID','SiteID','DateCreated'],",
-				"     skipKeyWrites:true,",
 				"     format: 'table',",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
