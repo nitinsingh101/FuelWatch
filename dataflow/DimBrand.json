@@ -53,7 +53,7 @@
 				"     skipDuplicateMapOutputs: true,",
 				"     errorHandlingOption: 'stopOnFirstError',",
 				"     mapColumn(",
-				"          BrandName = Brand",
+				"          BrandName",
 				"     )) ~> sink1"
 			]
 		}
