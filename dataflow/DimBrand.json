@@ -10,6 +10,13 @@
 						"type": "DatasetReference"
 					},
 					"name": "source1"
+				},
+				{
+					"dataset": {
+						"referenceName": "DimBrand",
+						"type": "DatasetReference"
+					},
+					"name": "source2"
 				}
 			],
 			"sinks": [
@@ -23,7 +30,7 @@
 			],
 			"transformations": [
 				{
-					"name": "AlterRow1"
+					"name": "exists1"
 				}
 			],
 			"scriptLines": [
@@ -35,18 +42,27 @@
 				"     isolationLevel: 'READ_UNCOMMITTED',",
 				"     query: 'Select Distinct Brand as BrandName from dw.FuelPrices',",
 				"     format: 'query') ~> source1",
-				"source1 alterRow(upsertIf(true())) ~> AlterRow1",
-				"AlterRow1 sink(allowSchemaDrift: true,",
+				"source(output(",
+				"          BrandID as integer,",
+				"          BrandName as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> source2",
+				"source1, source2 exists(source1@BrandName == source2@BrandName,",
+				"     negate:true,",
+				"     broadcast: 'auto')~> exists1",
+				"exists1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
 				"          BrandID as integer,",
 				"          BrandName as string",
 				"     ),",
 				"     deletable:false,",
-				"     insertable:false,",
+				"     insertable:true,",
 				"     updateable:false,",
-				"     upsertable:true,",
-				"     keys:['BrandName'],",
+				"     upsertable:false,",
 				"     format: 'table',",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
