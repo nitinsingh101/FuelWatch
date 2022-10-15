@@ -47,7 +47,6 @@
 				"     updateable:false,",
 				"     upsertable:true,",
 				"     keys:['BrandName'],",
-				"     skipKeyWrites:true,",
 				"     format: 'table',",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
